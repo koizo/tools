@@ -1,7 +1,8 @@
 import folium
 import random
 
-# teams with capacity
+max_distance = 1
+
 teams = [
     {"name": "Team 1", "capacity": 100},
     {"name": "Team 2", "capacity": 100},
@@ -13,9 +14,10 @@ teams = [
     {"name": "Team 8", "capacity": 100},
     {"name": "Team 9", "capacity": 100},
     {"name": "Team 10", "capacity": 100},
+    {"name": "Team 11", "capacity": 100},
+    {"name": "Team 12", "capacity": 100},
 ]
 
-#city with the work capacity required
 work_to_be_done = [
     {"name": "Lisbon", "capacity": 20, "x":  38.736946, "y":  -9.142685},
     #porto
@@ -64,6 +66,48 @@ work_to_be_done = [
     {"name": "Guimarães", "capacity": 20, "x": 41.4425, "y": -8.2917},
     # valenca
     {"name": "Valença", "capacity": 20, "x": 42.0294, "y": -8.6439},
+    # mourao
+    {"name": "Mourão", "capacity": 20, "x": 38.3833, "y": -7.35},
+    # portel
+    {"name": "Portel", "capacity": 20, "x": 38.3, "y": -7.7},
+    # loule
+    {"name": "Loulé", "capacity": 20, "x": 37.1372, "y": -8.0197},
+    # tavira
+    {"name": "Tavira", "capacity": 20, "x": 37.1333, "y": -7.65},
+    # albufeira
+    {"name": "Albufeira", "capacity": 20, "x": 37.1333, "y": -8.25},
+    # chaves
+    {"name": "Chaves", "capacity": 20, "x": 41.7333, "y": -7.4667},
+    # val pacos
+    {"name": "Valpaços", "capacity": 20, "x": 41.6, "y": -7.3},
+    # mirandela
+    {"name": "Mirandela", "capacity": 20, "x": 41.4833, "y": -7.1833},
+    # Gaviao
+    {"name": "Gavião", "capacity": 20, "x": 39.4667, "y": -7.9333},
+    # olhao
+    {"name": "Olhão", "capacity": 20, "x": 37.0333, "y": -7.8333},
+    # portimao
+    {"name": "Portimão", "capacity": 20, "x": 37.1333, "y": -8.5333},
+    # Lagos
+    {"name": "Lagos", "capacity": 20, "x": 37.1, "y": -8.6667},
+    # silves
+    {"name": "Silves", "capacity": 20, "x": 37.1833, "y": -8.4333},
+    # sintra
+    {"name": "Sintra", "capacity": 20, "x": 38.8, "y": -9.3833},
+    # cascais
+    {"name": "Cascais", "capacity": 20, "x": 38.7, "y": -9.4167},
+    # barreiro
+    {"name": "Barreiro", "capacity": 20, "x": 38.6667, "y": -9.0667},
+    # amora
+    {"name": "Amora", "capacity": 20, "x": 38.6167, "y": -9.1167},
+    # alcobaca
+    {"name": "Alcobaça", "capacity": 20, "x": 39.55, "y": -8.9833},
+    # valenca
+    {"name": "Valença", "capacity": 20, "x": 42.0294, "y": -8.6439},
+    # paredes de coura
+    {"name": "Paredes de Coura", "capacity": 20, "x": 41.9167, "y": -8.5667},
+
+
 ]
 
 # function to reorder work to be done by distance to 0,0
@@ -84,27 +128,43 @@ def reorder_work(work_to_be_done):
     )
     return reordered_work_to_be_done
 
+#function to calculate the middle point from a list of tasks
+def middle_point(tasks):
+    # initialize the middle point
+    middle_point = {"x": 0, "y": 0}
+    # for each task
+    for task in tasks:
+        # update the middle point
+        middle_point["x"] = middle_point["x"] + task["x"]
+        middle_point["y"] = middle_point["y"] + task["y"]
+    # divide the middle point by the number of tasks
+    middle_point["x"] = middle_point["x"] / len(tasks)
+    middle_point["y"] = middle_point["y"] / len(tasks)
+    return middle_point
 
-# function to find the closest task, given another task
-def closest_task(task, work_to_be_done):
+# function to find the closest task, given a list of tasks
+def closest_task(tasks, work_to_be_done):
+    task = middle_point(tasks)
     # initialize the closest task
     closest_task = None
     # initialize the closest distance
     closest_distance = None
     # for each task
     for task_to_be_done in work_to_be_done:
-        # if the task is not the same as the task to be done
-        if task_to_be_done["name"] != task["name"]:
-            # calculate the distance between the two tasks
-            distance = abs(task["x"] - task_to_be_done["x"]) + abs(
-                task["y"] - task_to_be_done["y"]
-            )
-            # if the distance is closer than the closest distance
-            if closest_distance == None or distance < closest_distance:
-                # update the closest task
-                closest_task = task_to_be_done
-                # update the closest distance
-                closest_distance = distance
+        # calculate the distance between task and middle point of task already scheduled
+        distance = abs(task["x"] - task_to_be_done["x"]) + abs(
+            task["y"] - task_to_be_done["y"]
+        )
+        # if the distance is closer than the closest distance
+        if closest_distance == None or distance < closest_distance:
+            # update the closest task
+            closest_task = task_to_be_done
+            # update the closest distance
+            closest_distance = distance
+    # if the closest distance is bigger than the max distance
+    if closest_distance > max_distance:
+        return None
+    
     return closest_task
 
 # function to attribute tasks to teams based on capacity
@@ -126,13 +186,15 @@ def schedule_work(teams, work_to_be_done):
             team_tasks.append(task)
             team_capacity = team_capacity - task["capacity"]
         # while the team has capacity
-        while team_capacity > 20:
+        while team_capacity >= 0:
             # if there is no more work to be done
             if work_to_be_done == []:
                 # break the loop
                 break
             # get the closest task
-            task = closest_task(team_tasks[-1], work_to_be_done)
+            task = closest_task(team_tasks, work_to_be_done)
+            if task == None:
+                break
             # pop the task from the list
             work_to_be_done.remove(task)
             # append the task to the team tasks
@@ -163,7 +225,7 @@ def create_map(schedule_work):
             color=color,
             fill=True,
             fill_color="blue",
-            fill_opacity=0.1,
+            fill_opacity=0.25,
         ).add_to(m)
     # save the map as an html file
     m.save("map.html")
@@ -171,4 +233,9 @@ def create_map(schedule_work):
 # reorder the work to be done to optimize the routes
 work_to_be_done = reorder_work(work_to_be_done)
 # schedule the work to be done and map the routes
-create_map(schedule_work(teams, work_to_be_done))
+schedule = schedule_work(teams, work_to_be_done)
+create_map(schedule)
+# print the schedule
+print(schedule)
+# print unscheduled work
+print(work_to_be_done)
