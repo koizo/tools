@@ -186,7 +186,7 @@ def schedule_work(teams, work_to_be_done):
             team_tasks.append(task)
             team_capacity = team_capacity - task["capacity"]
         # while the team has capacity
-        while team_capacity >= 0:
+        while team_capacity > 0:
             # if there is no more work to be done
             if work_to_be_done == []:
                 # break the loop
